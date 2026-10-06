@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from schemas import SeriesDTO
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+import sqlite3
 import json
 
 series = []
@@ -40,3 +41,21 @@ def listar_series():
         return []
     else:
         return arquivo_lido
+
+@app.get("/series/{titulo}")
+def buscar_serie(titulo: str):
+    conexao = sqlite3.connect('series.db')
+    cursor = conexao.cursor()
+
+    cursor.execute(
+        "SELECT * FROM catalogo WHERE LOWER(titulo) = LOWER(?)",
+        (titulo,)
+    )
+
+    serie = cursor.fetchone()
+    conexao.close()
+
+    if serie is None:
+        raise HTTPException(status_code=404, detail="Série não encontrada")
+
+    return serie
